@@ -19,7 +19,7 @@ class DMILoss(nn.Module):
         target = target.float()
         #print(output.shape)
         #print(target.shape)
-        #print(output)
+        print(output)
         #print(target)
         #print(torch.sum(output[:,:1,:,:] - target))
         #print(torch.sum(output[:,1:,:,:] - target))
@@ -45,9 +45,24 @@ class BootstrapLoss(nn.Module):
     reduction = 'none'
     def __init__(self):
         super().__init__()
+        self.w = 0.02
 
     def forward(self, output, target):
         feature_dim = 2 * 256 * 256
         output = output.float()
         target = target.float() 
 
+        inv_target = 1 - target
+        target = torch.cat((target, inv_target), 1)
+        h_out = F.softmax(output, dim=1)
+        preds = (h_out > 0.5).float()
+        
+        y = target.view(-1, feature_dim)
+        z = preds.view(-1, feature_dim)
+        h = h_out.view(-1, feature_dim)
+
+        weighted_out = ((1 - self.w) * y) + (self.w * z)
+
+        log_h = torch.log(h)
+
+        return torch.abs(torch.sum(weighted_out * log_h))

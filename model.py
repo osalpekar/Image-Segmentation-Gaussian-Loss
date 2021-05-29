@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import sklearn.metrics
 from fastai.vision import *
 
-from loss import DMILoss
+from loss import BootstrapLoss, DMILoss
 
 # Image File Paths
 IMG_DIR = "../data/images-256/*.png"
@@ -85,9 +85,10 @@ def jq(y_pred, y_true, thresh=0.5):
 
 dmi_loss = DMILoss()
 
+bootstrap_loss = BootstrapLoss()
 
 learn = unet_learner(data, models.resnet34, metrics=jq)
-learn.loss_func = dmi_loss
+learn.loss_func = bootstrap_loss
 
 print("Constructed trainer")
 
