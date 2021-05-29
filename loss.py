@@ -43,9 +43,14 @@ class DMILoss(nn.Module):
 
 class BootstrapLoss(nn.Module):
     reduction = 'none'
-    def __init__(self):
+    def __init__(self, bootstrap_type="soft"):
         super().__init__()
-        self.w = 0.02
+
+        self.bootstrap_type = bootstrap_type
+        if bootstrap_type == "soft":
+            self.w = 0.05
+        elif bootstrap_type == "hard":
+            self.w = 0.2
 
     def forward(self, output, target):
         feature_dim = 2 * 256 * 256
@@ -61,8 +66,14 @@ class BootstrapLoss(nn.Module):
         z = preds.view(-1, feature_dim)
         h = h_out.view(-1, feature_dim)
 
-        weighted_out = ((1 - self.w) * y) + (self.w * z)
+        weighted_true = ((1 - self.w) * y)
+        weighted_pred = 0
+        if self.bootstrap_type == "soft":
+            weighted_pred = (self.w * h)
+        elif self.bootstrap_type == "hard":
+            weighted_pred = (self.w * z)
 
+        weighted_out = weighted_true + weighted_pred
         log_h = torch.log(h)
 
         return torch.abs(torch.sum(weighted_out * log_h))
