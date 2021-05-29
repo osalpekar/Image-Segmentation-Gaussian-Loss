@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import sklearn.metrics
 from fastai.vision import *
 
+from metrics import jaccard
 from loss import BootstrapLoss, DMILoss
 
 # Image File Paths
@@ -16,7 +17,7 @@ IMG_DIR = "../data/images-256/*.png"
 MASK_DIR = "../data/masks-256/*.png"
 
 # Important Constants
-NUM_TRAIN_EXAMPLES = 300
+NUM_TRAIN_EXAMPLES = 32
 BATCH_SIZE = 16
 NUM_EPOCHS = 1
 LR = 1e-5 
@@ -72,22 +73,11 @@ data = (src.transform(get_transforms(), size=256, tfm_y=True)
 print("Done assembling databunch")
 
 
-def jq(y_pred, y_true, thresh=0.5):
-    scores = []
-    y_pred = y_pred.to("cpu")
-    y_true = y_true.to("cpu")
-    for i in range(len(y_true)):
-        binary_preds =  (y_pred[i][0].flatten()>thresh).int()
-        score = sklearn.metrics.jaccard_score(y_true[i].flatten(), binary_preds, average='micro')
-        scores.append(score)
-    return torch.tensor(sum(scores)/len(scores))
-
-
 dmi_loss = DMILoss()
 
 bootstrap_loss = BootstrapLoss()
 
-learn = unet_learner(data, models.resnet34, metrics=jq)
+learn = unet_learner(data, models.resnet34, metrics=jaccard)
 learn.loss_func = bootstrap_loss
 
 print("Constructed trainer")
