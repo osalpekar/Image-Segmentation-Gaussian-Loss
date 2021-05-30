@@ -72,7 +72,39 @@ data = (src.transform(get_transforms(), size=256, tfm_y=True)
 #data.show_batch(2, figsize=(10,7))
 print("Done assembling databunch")
 
+class SiameseNet(nn.Module):
+    def __init__(self):
+        self.net = DynamicUnet(models.resnet34, 2, (256, 256))
 
+    def forward(self, in1, in2):
+        out1 = self.net(in1)
+        out2 = self.net(in2)
+
+        return out1, out2
+
+class ContrastiveLoss(nn.Module):
+    """Takes embeddings of two samples and a target label == 1 if samples are from the same class and label == 0 otherwise
+    """
+    def __init__(self, margin=5.):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, ops, target, size_average=True):
+        op1, op2 = ops[0], ops[1]
+        dist = F.pairwise_distance(op1, op2)
+        pdist = dist*target
+        ndist = dist*(1-target)
+        loss = 0.5* ((pdist**2) + (F.relu(self.margin-ndist)**2))
+        return loss.mean() if size_average else losses.sum()
+
+model = SiameseNet().cuda()
+#apply_init(model.head, nn.init.kaiming_normal_)
+loss_func=ContrastiveLoss().cuda()
+learn = Learner(data, model, loss_func=loss_func)#, model_dir=Path(os.getcwd()))
+learn.fit_one_cycle(NUM_EPOCHS, slice(LR))
+
+
+"""
 dmi_loss = DMILoss()
 
 bootstrap_loss = BootstrapDynamicLoss()
@@ -84,7 +116,7 @@ print("Constructed trainer")
 
 # Train!
 learn.fit_one_cycle(NUM_EPOCHS, slice(LR))
-
+"""
 
 src = (SegmentationItemList.from_df(path='', df=df_small[:4], cols='img_path')) # Did in two batches
 #learn = load_learner('') # Loads the exported learner from earlier
