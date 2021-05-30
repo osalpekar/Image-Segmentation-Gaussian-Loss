@@ -69,15 +69,17 @@ class SiamDataset(Dataset):
 
         return img1, img2, mask1, mask2, label
 
-def create_standard_databunch(batch_size, num_train_examples):
+def create_standard_databunch(batch_size, num_train_examples=None):
     # Override open method of SegmentationLabelList since our masks are 0 for class 0, 255 for class 1 (so need div=True)
     def my_open(self, fn): return open_mask(fn, div=True)
     SegmentationLabelList.open = my_open
 
     df = pd.read_pickle(DF_PATH)
     print(df.head())
-    df_small = df.head(num_train_examples)
-    src = (SegmentationItemList.from_df(path='', df=df_small, cols='img_path')
+    if num_train_examples is not None:
+        df = df.head(num_train_examples)
+
+    src = (SegmentationItemList.from_df(path='', df=df, cols='img_path')
            .split_from_df(col='validation')
            .label_from_df(cols='mask_path', classes=["building", "not"]))
 
