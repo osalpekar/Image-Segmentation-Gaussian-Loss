@@ -8,9 +8,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import sklearn.metrics
 from fastai.vision import *
+from fastai.vision.models.unet import *
 
 from metrics import jaccard
 from loss import BootstrapStaticLoss, BootstrapDynamicLoss, DMILoss
+from data import get_data, SiamDataset
 
 # Image File Paths
 IMG_DIR = "../data/images-256/*.png"
@@ -22,27 +24,6 @@ BATCH_SIZE = 16
 NUM_EPOCHS = 2
 LR = 1e-5 
 
-def get_data():
-    # Get Image and Mask Filenames
-    ims = glob.glob(IMG_DIR)
-    masks = glob.glob(MASK_DIR)
-
-    # Create pandas dataframe of filepaths. The validation column indicates
-    # whether the column is part of the validation set or not.
-    df = pd.DataFrame({
-        "img_path"   : ims,
-        "mask_path"  : masks,
-        "validation" : False,
-    })
-
-    # Add Scene ID and area
-    df['scene_id'] = df['img_path'].apply(lambda x: x.split("_")[1])
-    df['area'] = df['img_path'].apply(lambda x: x.split("_")[0].split("/")[-1])
-
-    # Let's use ptn as a valid set. Can also split randomly
-    df.loc[df.area == 'dar', 'validation'] = True
-    
-    return df
 
 df = get_data()
 print("completed Data Parsing")
@@ -52,13 +33,13 @@ print(df.head())
 #df.groupby('area').count()['scene_id']
 
 
+df_small = df.head(NUM_TRAIN_EXAMPLES)
+"""
 # Override open method of SegmentationLabelList since our masks are 0 for class 0, 255 for class 1 (so need div=True)
 def my_open(self, fn): return open_mask(fn, div=True)
 SegmentationLabelList.open = my_open
 
-df_small = df.head(NUM_TRAIN_EXAMPLES)
 
-# Load the data from the dataframe
 np.random.seed(42)
 src = (SegmentationItemList.from_df(path='', df=df_small, cols='img_path')
        .split_from_df(col='validation')
@@ -67,6 +48,13 @@ src = (SegmentationItemList.from_df(path='', df=df_small, cols='img_path')
 data = (src.transform(get_transforms(), size=256, tfm_y=True)
         .databunch(bs=BATCH_SIZE) # Change batch size if you're having memory issues
         .normalize(imagenet_stats))
+"""
+
+train_ds = SiamDataset(is_validation=False)
+valid_ds = SiamDataset(is_validation=True)
+train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+valid_dl = DataLoader(valid_ds, batch_size=BATCH_SIZE, shuffle=False)
+data = DataBunch(train_dl, valid_dl)
 
 # Check out a batch
 #data.show_batch(2, figsize=(10,7))
@@ -74,7 +62,7 @@ print("Done assembling databunch")
 
 class SiameseNet(nn.Module):
     def __init__(self):
-        self.net = DynamicUnet(models.resnet34, 2, (256, 256))
+        self.net = DynamicUnet(models.resnet34(), 2, (256, 256))
 
     def forward(self, in1, in2):
         out1 = self.net(in1)
