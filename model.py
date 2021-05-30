@@ -21,9 +21,11 @@ MASK_DIR = "../data/masks-256/*.png"
 # Important Constants
 NUM_TRAIN_EXAMPLES = 32
 BATCH_SIZE = 16
-NUM_EPOCHS = 2
+NUM_EPOCHS = 1
 LR = 1e-5 
 
+MODEL_NAME = "./test.pkl"
+ROOT_PATH = "/home/ubuntu/cs231n_project/"
 
 #df = get_data()
 #print(df.head())
@@ -87,10 +89,4 @@ print("Constructed trainer")
 
 # Train!
 learn.fit_one_cycle(NUM_EPOCHS, slice(LR))
-
-#src = (SegmentationItemList.from_df(path='', df=df_small[:4], cols='img_path')) # Did in two batches
-#learn = load_learner('') # Loads the exported learner from earlier
-#learn.data.add_test(src, tfms=None, tfm_y=False)
-#preds, y = learn.get_preds(DatasetType.Test) # Careful with ram - do in batches if needed ()
-#p,_,_ = learn.predict(df_small.head(1))
-#print(preds)
+learn.export(MODEL_NAME)
