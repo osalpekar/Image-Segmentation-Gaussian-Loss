@@ -1,3 +1,6 @@
 __pycache__/
 outs/
 checkpoints/
+models/
+*.pkl
+logs/
