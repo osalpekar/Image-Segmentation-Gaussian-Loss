@@ -12,7 +12,7 @@ from fastai.vision.models.unet import *
 
 from metrics import jaccard
 from loss import BootstrapStaticLoss, BootstrapDynamicLoss, DMILoss
-from data import get_data, SiamDataset
+from data import get_data, create_siamese_databunch, create_standard_databunch
 
 # Image File Paths
 IMG_DIR = "../data/images-256/*.png"
@@ -25,37 +25,19 @@ NUM_EPOCHS = 2
 LR = 1e-5 
 
 
-df = get_data()
-print("completed Data Parsing")
-print(df.head())
+#df = get_data()
+#print(df.head())
 
 # How many ims for each area?
 #df.groupby('area').count()['scene_id']
 
 
-df_small = df.head(NUM_TRAIN_EXAMPLES)
-"""
-# Override open method of SegmentationLabelList since our masks are 0 for class 0, 255 for class 1 (so need div=True)
-def my_open(self, fn): return open_mask(fn, div=True)
-SegmentationLabelList.open = my_open
+#df_small = df.head(NUM_TRAIN_EXAMPLES)
 
+data = create_standard_databunch(BATCH_SIZE, NUM_TRAIN_EXAMPLES)
+#data = create_siamese_databunch(BATCH_SIZE, NUM_TRAIN_EXAMPLES)
 
-np.random.seed(42)
-src = (SegmentationItemList.from_df(path='', df=df_small, cols='img_path')
-       .split_from_df(col='validation')
-       .label_from_df(cols='mask_path', classes=["building", "not"]))
-
-data = (src.transform(get_transforms(), size=256, tfm_y=True)
-        .databunch(bs=BATCH_SIZE) # Change batch size if you're having memory issues
-        .normalize(imagenet_stats))
-"""
-
-train_ds = SiamDataset(is_validation=False)
-valid_ds = SiamDataset(is_validation=True)
-train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
-valid_dl = DataLoader(valid_ds, batch_size=BATCH_SIZE, shuffle=False)
-data = DataBunch(train_dl, valid_dl)
-
+print("completed Data Parsing")
 # Check out a batch
 #data.show_batch(2, figsize=(10,7))
 print("Done assembling databunch")
@@ -85,6 +67,7 @@ class ContrastiveLoss(nn.Module):
         loss = 0.5* ((pdist**2) + (F.relu(self.margin-ndist)**2))
         return loss.mean() if size_average else losses.sum()
 
+"""
 model = SiameseNet().cuda()
 #apply_init(model.head, nn.init.kaiming_normal_)
 loss_func=ContrastiveLoss().cuda()
@@ -104,11 +87,10 @@ print("Constructed trainer")
 
 # Train!
 learn.fit_one_cycle(NUM_EPOCHS, slice(LR))
-"""
 
-src = (SegmentationItemList.from_df(path='', df=df_small[:4], cols='img_path')) # Did in two batches
+#src = (SegmentationItemList.from_df(path='', df=df_small[:4], cols='img_path')) # Did in two batches
 #learn = load_learner('') # Loads the exported learner from earlier
-learn.data.add_test(src, tfms=None, tfm_y=False)
-preds, y = learn.get_preds(DatasetType.Test) # Careful with ram - do in batches if needed ()
+#learn.data.add_test(src, tfms=None, tfm_y=False)
+#preds, y = learn.get_preds(DatasetType.Test) # Careful with ram - do in batches if needed ()
 #p,_,_ = learn.predict(df_small.head(1))
-print(preds)
+#print(preds)
