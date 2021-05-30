@@ -10,7 +10,7 @@ import sklearn.metrics
 from fastai.vision import *
 
 from metrics import jaccard
-from loss import BootstrapLoss, DMILoss
+from loss import BootstrapStaticLoss, BootstrapDynamicLoss, DMILoss
 
 # Image File Paths
 IMG_DIR = "../data/images-256/*.png"
@@ -19,7 +19,7 @@ MASK_DIR = "../data/masks-256/*.png"
 # Important Constants
 NUM_TRAIN_EXAMPLES = 32
 BATCH_SIZE = 16
-NUM_EPOCHS = 1
+NUM_EPOCHS = 2
 LR = 1e-5 
 
 def get_data():
@@ -75,7 +75,7 @@ print("Done assembling databunch")
 
 dmi_loss = DMILoss()
 
-bootstrap_loss = BootstrapLoss()
+bootstrap_loss = BootstrapDynamicLoss()
 
 learn = unet_learner(data, models.resnet34, metrics=jaccard)
 learn.loss_func = bootstrap_loss
