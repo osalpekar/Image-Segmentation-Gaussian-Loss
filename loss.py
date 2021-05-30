@@ -43,11 +43,27 @@ class DMILoss(nn.Module):
         mat = mat# / target.size(0)
         return 1.0 * torch.log(torch.abs(torch.det(mat.float())) + 0.001)
 
+class ContrastiveLoss(nn.Module):
+    """
+    Takes embeddings of two samples and a target label == 1 if
+    samples are from the same class and label == 0 otherwise
+    """
+    def __init__(self, margin=5.):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, ops, target, size_average=True):
+        op1, op2 = ops[0], ops[1]
+        dist = F.pairwise_distance(op1, op2)
+        pdist = dist*target
+        ndist = dist*(1-target)
+        loss = 0.5* ((pdist**2) + (F.relu(self.margin-ndist)**2))
+        return loss.mean() if size_average else losses.sum()
+
 class BootstrapStaticLoss(nn.Module):
     reduction = 'none'
     def __init__(self, bootstrap_type="soft"):
         super().__init__()
-        print("LOSS INIT")
 
         self.bootstrap_type = bootstrap_type
         if bootstrap_type == "soft":
@@ -86,7 +102,6 @@ class BootstrapDynamicLoss(nn.Module):
     reduction = 'none'
     def __init__(self, bootstrap_type="soft", mixture_type="gaussian"):
         super().__init__()
-        print("LOSS INIT")
 
         self.bootstrap_type = bootstrap_type
 
