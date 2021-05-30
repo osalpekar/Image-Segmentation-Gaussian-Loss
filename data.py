@@ -13,6 +13,9 @@ from fastai.vision import *
 IMG_DIR = "../data/images-256/*.png"
 MASK_DIR = "../data/masks-256/*.png"
 
+# DataFrame serialized filename
+DF_PATH = "./data.pkl"
+
 def get_data():
     # Get Image and Mask Filenames
     ims = glob.glob(IMG_DIR)
@@ -31,13 +34,16 @@ def get_data():
     df['area'] = df['img_path'].apply(lambda x: x.split("_")[0].split("/")[-1])
 
     # Let's use ptn as a valid set. Can also split randomly
-    df.loc[df.area == 'dar', 'validation'] = True
+    #df.loc[df.area == 'dar', 'validation'] = True
+    np.random.seed(100)
+    val_idx = np.random.choice(len(df), replace=False, size=1000)
+    df.iloc[val_idx, df.columns.get_loc('validation')] = True
     
     return df
 
 class SiamDataset(Dataset):
     def __init__(self, is_validation=False, num_train_examples=None):
-        df = get_data()
+        df = pd.read_pickle(DF_PATH)
         if num_train_examples is not None:
             df = df.head(num_train_examples)
         df = df[df['validation'] == is_validation]
@@ -68,7 +74,7 @@ def create_standard_databunch(batch_size, num_train_examples):
     def my_open(self, fn): return open_mask(fn, div=True)
     SegmentationLabelList.open = my_open
 
-    df = get_data()
+    df = pd.read_pickle(DF_PATH)
     print(df.head())
     df_small = df.head(num_train_examples)
     src = (SegmentationItemList.from_df(path='', df=df_small, cols='img_path')
@@ -89,3 +95,7 @@ def create_siamese_databunch(batch_size, num_train_examples):
     data = DataBunch(train_dl, valid_dl)
 
     return data
+
+if __name__ == "__main__":
+    df = get_data()
+    df.to_pickle(DF_PATH)
