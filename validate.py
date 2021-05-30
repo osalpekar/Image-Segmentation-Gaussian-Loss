@@ -14,7 +14,7 @@ from metrics import jaccard
 from data import get_data, create_siamese_databunch, create_standard_databunch
 
 # TODO: Change this to correct model name when doing eval
-MODEL_NAME = "./test.pkl"
+MODEL_NAME = "./checkpoints/test.pkl"
 ROOT_PATH = "/home/ubuntu/cs231n_project/"
 
 if __name__ == "__main__":

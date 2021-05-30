@@ -14,7 +14,7 @@ IMG_DIR = "../data/images-256/*.png"
 MASK_DIR = "../data/masks-256/*.png"
 
 # DataFrame serialized filename
-DF_PATH = "./data.pkl"
+DF_PATH = "./checkpoints/data.pkl"
 
 def get_data():
     # Get Image and Mask Filenames
