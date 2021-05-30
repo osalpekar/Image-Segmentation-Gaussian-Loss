@@ -22,9 +22,9 @@ MASK_DIR = "../data/masks-256/*.png"
 NUM_TRAIN_EXAMPLES = 32
 BATCH_SIZE = 16
 NUM_EPOCHS = 1
-LR = 1e-5 
+LR = 5e-4 
 
-MODEL_NAME = "./test.pkl"
+MODEL_NAME = "./checkpoints/test.pkl"
 ROOT_PATH = "/home/ubuntu/cs231n_project/"
 
 #df = get_data()
@@ -88,5 +88,9 @@ learn.loss_func = bootstrap_loss
 print("Constructed trainer")
 
 # Train!
-learn.fit_one_cycle(NUM_EPOCHS, slice(LR))
+#learn.lr_find()
+#graph = learn.recorder.plot(return_fig=True)
+#graph.savefig('loss.png')
+
+learn.fit_one_cycle(NUM_EPOCHS, LR)
 learn.export(MODEL_NAME)
