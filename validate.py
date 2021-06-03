@@ -14,12 +14,12 @@ from metrics import jaccard
 from data import get_data, create_siamese_databunch, create_standard_databunch
 
 # TODO: Change this to correct model name when doing eval
-MODEL_NAME = "./checkpoints/test.pkl"
+MODEL_NAME = "./checkpoints/base_unet_1epoch_500.pkl"
 ROOT_PATH = "/home/ubuntu/cs231n_project/"
 
 if __name__ == "__main__":
     # Load the trained and serialized model
-    data = create_standard_databunch(16, 32)
+    data = create_standard_databunch(16, None)
     learn = load_learner(Path(ROOT_PATH), MODEL_NAME)
     learn.data = data
 
