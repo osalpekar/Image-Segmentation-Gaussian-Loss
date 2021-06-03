@@ -14,7 +14,7 @@ IMG_DIR = "../data/images-256/*.png"
 MASK_DIR = "../data/masks-256/*.png"
 
 # DataFrame serialized filename
-DF_PATH = "./checkpoints/data.pkl"
+DF_PATH = "./checkpoints/data_new.pkl"
 
 def get_data():
     # Get Image and Mask Filenames
@@ -25,7 +25,7 @@ def get_data():
     # whether the column is part of the validation set or not.
     df = pd.DataFrame({
         "img_path"   : ims,
-        "mask_path"  : masks,
+        "mask_path"  : [im.replace('images', 'masks').replace('.png', '_mask.png') for im in ims],
         "validation" : False,
     })
 
